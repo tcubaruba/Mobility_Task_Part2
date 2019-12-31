@@ -1,0 +1,217 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+```{r}
+# install.packages('pacman')
+install.packages('devtools')
+
+```
+
+```{r}
+# load all packages
+pacman::p_load(
+  data.table,
+  tidyverse,
+  lubridate,
+  leaflet,
+  ggplot2,
+  kableExtra,
+  TSrepr,
+  zoo)
+devtools::install_github("nelsonroque/tsfeaturex")
+library(tsfeaturex)
+```
+```{r}
+# clean workspace
+rm(list = ls())
+```
+```{r}
+# define relevant directories
+trip.dir <- "cgt_stud_2019/"
+plot.dir <- "plots/"
+```
+```{r}
+# helper function for paa
+time_ms_approx <- function(x){
+  approx(x = acceleration[, time_ms], y = x, xout = t_equi)$y %>% 
+    repr_paa(., q = 10, func = medianC)
+}
+```
+```{r}
+# helper function to view trip
+view_trip <- function(x){
+  # x ...  the csv input as data.table
+  dfp <- x[, list(longitude, latitude)]
+  colnames(dfp) <- c("lon", "lat")#, "k")
+  TILES <- c("osm", "Stamen.Watercolor", "Stamen.TonerHybrid", 
+             "Stamen.Terrain", "Esri.WorldImagery")
+  TILE <- TILES[4]
+  
+  lplot0 <- leaflet("map") %>% 
+    addCircleMarkers(data = dfp, radius = 3, opacity = 1) %>% #, color = ~pal(ca)) %>% 
+    addProviderTiles(TILE) 
+  lplot0
+}
+```
+```{r}
+trips <- dir(trip.dir)
+# # my trips for testing
+# trips <- trips[startsWith(trips, "30_")]
+
+for(t in trips) {
+
+  message(t)
+  trip <- str_split(t, "T", simplify = TRUE)[, 1]
+  
+  types <- list.files(paste0(trip.dir, t))[str_detect(list.files(paste0(trip.dir, t)), ".csv")]
+  
+  # markers
+  markers <- fread(paste0(trip.dir, t, "/", "markers.csv"), sep = ";", fill = TRUE, header = TRUE)
+  setnames(markers, c("V4", "V5", "V6"), c("mode", "longitude", "latitude"))
+  
+  # set correct time format
+  markers[, time := ymd_hms(time)]
+  
+  # filter if trip at least 10mins
+  if(markers[, max(time)] - markers[, min(time)] >= hms("00:02:00")) {
+    
+    # acceleration
+    acceleration <- fread(paste0(trip.dir, t, "/", "acceleration.csv"))
+    
+    # set time and make ms
+    acceleration[, time := ymd_hms(time)]
+    acceleration[, time_ms := as.numeric(seconds(time))*1000]
+    
+    # start end end of time
+    t0 <- head(acceleration, 1)[, time_ms]
+    t1 <- tail(acceleration, 1)[, time_ms]
+
+    # resample to 100Hz, aggregate to 10Hz
+    t_equi <- seq(t0, t1, by = 10) # 100 Hz
+    PAA_NUM <- length(t_equi)/10 # aggregate 10 values to 1 => 10Hz
+    
+    # acceleration <- merge(acceleration, data.table(time_ms = t_equi), all = TRUE)
+    acc_equi <- data.table(time_ms = repr_paa(t_equi, q = 10, func = medianC),
+                           x = time_ms_approx(acceleration[, x]),
+                           y = time_ms_approx(acceleration[, y]),
+                           z = time_ms_approx(acceleration[, z])
+    )
+    
+    
+    ## plot generation for visual inspection
+    # dfp    
+    dfp <- melt(acc_equi, id.vars = "time_ms", variable.name = "key", variable.factor = FALSE, value.name = "value")
+    dfp$time <-  as.POSIXct(dfp$time_ms/1000, origin = "1970-01-01", tz = "UTC")
+    dim(dfp)
+    ggplot(dfp) + geom_line(aes(x = time, y = value, group = key, col = key))
+    ggsave(filename = paste0(plot.dir, trip, "-ACC.png"))
+    
+    # n2-norm
+    n2 <- data.table(time = as.POSIXct(acc_equi$time_ms/1000, origin = "1970-01-01", tz = "UTC"),
+                     value = apply(acc_equi, 1, function(a){sqrt(sum(a[2:4]^2))}))
+    # gg1 <- ggplot(n2) + geom_line(aes(x = time, y = value))
+    
+    # changes <- markers[key == "CGT_MODE_CHANGED", list(time = with_tz(ymd_hms(value)), mode = mode)]
+    # gg1 + geom_vline(data = changes, aes(xintercept = time), col = "red")+
+    #   geom_text(data = changes, aes(x = time + 20, y = 20, label = mode, angle = 90), col = "red")
+    # ggsave(filename = paste0(plot.dir, trip, "-MODE-CHANGES.png"))
+    
+    # if(file.exists(file.path(trip.dir, t, "positions.csv"))) {
+    #   pos <- fread(file.path(trip.dir, t, "positions.csv"))
+    #   
+    #   kable(pos[1:20, ]) %>%
+    #     kable_styling(font_size = 9) %>%
+    #     scroll_box(width = "100%", height = "200px")
+    #   
+    #   #concentrate on GPS data by filtering the location source
+    #   pos <- pos[location_source == 1]
+    #   
+    #   # define a small function for plotting a trip:
+    #   # ggsave(filename = paste0(plot.dir, trip, "-VIEW.png"), plot = view_trip(pos))
+    #   
+    # }
+    
+    # extract mode changes
+    changes <- markers[key == "CGT_MODE_CHANGED"]
+    # drop "WAIT" (-> proxy with previous mode)
+    changes <- changes[!(mode %in% c("WAIT", "UNKNOWN"))]
+    # generate time_ms for merging
+    changes[, time_ms := as.numeric(seconds(ymd_hms(value))*1000)]
+    changes <- select(changes, time, value, time_ms, mode)
+    
+    # fill labels
+    for(i in 1:nrow(changes)) {
+      acc_equi[(changes[i, time_ms] < acc_equi[, time_ms]) & (acc_equi[, time_ms] < changes[i+1, time_ms]), mode := changes[i, mode]]
+    }
+    setDT(acc_equi)
+    
+    # mode: drop all NA's
+    acc_equi <- acc_equi[!is.na(mode)]
+    
+    # drop last bit, only if there is something
+    end <- nrow(acc_equi) %% 100
+    if(end > 0) {
+      acc_equi <- acc_equi[1:(nrow(acc_equi)-end)]
+    }
+    # drop first 30 seconds
+    acc_equi <- acc_equi[-(1:300), ]
+    # drop last 30 seconds
+    acc_equi <- acc_equi[-((nrow(acc_equi)-299):nrow(acc_equi)), ]
+    
+    # drop last bit, only if there is something
+    end <- nrow(acc_equi) %% 100
+    if(end > 0) {
+      acc_equi <- acc_equi[1:(nrow(acc_equi)-end)]
+    }
+    
+    # split into segments
+    acc_equi[, segment := rep(1:(nrow(acc_equi)/100), each = 100)]
+    
+    # check if two modes in one segment, if so drop it
+    tmp <- NULL
+    for(s in acc_equi[, unique(segment)]) {
+      if(length(acc_equi[segment == s, unique(mode)]) == 1) {
+        tmp <- rbind(tmp, acc_equi[segment == s])
+      }
+    }
+    
+    # relabel segments
+    tmp[, segment := rep(1:(nrow(tmp)/100), each = 100)]
+    
+    # add trip identifier
+    tmp[, trip := trip]
+    
+    # extract all features
+    x <- features_to_df(extract_features(tmp, group_var = "segment", value_var = "x", features = "all", return_timing = FALSE), data.format="wide", group_var = "id")
+    y <- features_to_df(extract_features(tmp, group_var = "segment", value_var = "y", features = "all", return_timing = FALSE), data.format="wide", group_var = "id")
+    z <- features_to_df(extract_features(tmp, group_var = "segment", value_var = "z", features = "all", return_timing = FALSE), data.format="wide", group_var = "id")
+    
+    # merge with mode
+    xyz <- merge(merge(merge(select(x, -PACKAGE_VERSION), select(y, -PACKAGE_VERSION), by = "segment"), select(z, -PACKAGE_VERSION), by = "segment"), unique(select(tmp, segment, mode)), by = "segment")
+    # bind with trip-id
+    xyz <- cbind(trip = trip, xyz)
+    
+    write_csv(tmp, paste0("segments/", trip, ".csv"))
+
+    rm(list = c("x", "y", "z", "tmp"))
+    
+    write_csv(xyz, paste0("output/", trip, ".csv"))
+  }
+}
+```
+```{r}
+# bind only white-listed trips
+source("99_bind_white_listed.R")
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+
