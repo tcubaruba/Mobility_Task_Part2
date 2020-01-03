@@ -10,7 +10,7 @@ from preprocess.preprocess import normalize_X
 pd.set_option('display.max_columns', None)
 np.set_printoptions(threshold=sys.maxsize)
 
-X, y = load_features_data(threshold=0.1)
+X, y = load_features_data(correlation_threshold=0.1)
 y = prepare_binary_target(y, ['WALK'])
 
 # normalize X

@@ -1,8 +1,5 @@
 import pandas as pd
-import seaborn as sn
-import matplotlib.pyplot as plt
 from sklearn.preprocessing import normalize
-import numpy as np
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
