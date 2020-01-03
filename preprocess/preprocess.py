@@ -1,12 +1,14 @@
 import pandas as pd
 import seaborn as sn
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import normalize
+import numpy as np
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 
 
-def find_high_corr(threshold=0.3):
+def find_high_corr(threshold=0.3, drop_mode=True):
 
     features = pd.read_csv('../final/all_features.csv')
     # delete cols with nan values
@@ -31,6 +33,24 @@ def find_high_corr(threshold=0.3):
     high_corr_cols = list(high_corr.index)
     print(high_corr_cols)
 
-    high_corr_cols.remove('mode')
+    if drop_mode:
+        high_corr_cols.remove('mode')
 
     return high_corr_cols
+
+
+def target_to_numerical(data, column):
+    target = data[column]
+    target = target.astype('category')
+    target = target.cat.codes
+    target = target.values
+    return target
+
+
+def normalize_X(orig_data):
+    data = orig_data.copy()
+    colnames = data.columns
+    index = data.index
+    data = pd.DataFrame(normalize(data), columns=colnames, index=index)
+    return data
+

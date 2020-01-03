@@ -23,7 +23,7 @@ data = data.drop(columns=['trip', 'segment'])
 
 features['key_col'] = features['trip'].astype(str).str.cat(features['segment'].astype(str), sep='_')
 features = features.drop(columns=['trip', 'segment'])
-cols_to_join = preprocess.preprocess.find_high_corr(threshold=0.3)
+cols_to_join = preprocess.preprocess.find_high_corr(threshold=0.5)
 cols_to_join.append('key_col')
 cols_to_join = np.array(cols_to_join)
 features_to_join = features[cols_to_join]
@@ -66,18 +66,27 @@ target = permute_matrix(target)
 print(target.shape)
 print(data3d.shape)
 
-x_train = data3d[0:10000]
-y_train = target[0:10000]
+# x_train = data3d[0:10000]
+# y_train = target[0:10000]
+# print(x_train.shape)
+# print(y_train.shape)
+# x_test = data3d[10000:]
+# y_test = target[10000:]
+# print(x_test.shape)
+# print(y_test.shape)
+
+x_train = data3d[200:]
+y_train = target[200:]
 print(x_train.shape)
 print(y_train.shape)
-x_test = data3d[10000:]
-y_test = target[10000:]
+x_test = data3d[:200]
+y_test = target[:200]
 print(x_test.shape)
 print(y_test.shape)
 
 
 def evaluate_model(trainX, trainy, testX, testy):
-    verbose, epochs, batch_size = 1, 3, 1000
+    verbose, epochs, batch_size = 1, 3, 128
     n_timesteps, n_features, n_outputs = trainX.shape[1], trainX.shape[2], trainy.shape[1]
     print(n_timesteps)
     print(n_features)
@@ -85,12 +94,12 @@ def evaluate_model(trainX, trainy, testX, testy):
     model = Sequential()
     # model.add(LSTM(100, input_shape=(n_timesteps, n_features)))
     model.add(Dense(200, input_shape=(n_timesteps, n_features)))
-    model.add(Dropout(0.8))
+    model.add(Dropout(0.5))
     model.add(Dense(100, activation='sigmoid', kernel_initializer='RandomNormal'))
     model.add(Flatten())
-    model.add(Dense(n_outputs, activation='softmax', kernel_initializer='RandomNormal'))
+    model.add(Dense(n_outputs, activation='sigmoid', kernel_initializer='RandomNormal'))
     sgd = keras.optimizers.SGD(learning_rate=0.01, momentum=0.8, nesterov=False)
-    model.compile(loss = 'binary_crossentropy', optimizer=sgd, metrics=['accuracy'])
+    model.compile(loss = 'categorical_crossentropy', optimizer=sgd, metrics=['accuracy'])
     # fit network
     model.fit(trainX, trainy, epochs=epochs, batch_size=batch_size, verbose=verbose)
     pred = model.predict(trainX)
@@ -101,5 +110,6 @@ def evaluate_model(trainX, trainy, testX, testy):
 acc, pred = evaluate_model(x_train, y_train, x_test, y_test)
 print(acc)
 print(pred)
+# print(y_test)
 print(acc)
 
