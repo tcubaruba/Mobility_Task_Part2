@@ -7,12 +7,12 @@ from preprocess.preprocess import target_to_numerical
 from sklearn.model_selection import cross_validate
 
 
-def load_features_data():
+def load_features_data(threshold=0.1):
     features = pd.read_csv('../final/all_features.csv')
 
     features['key_col'] = features['trip'].astype(str).str.cat(features['segment'].astype(str), sep='_')
     features = features.drop(columns=['trip', 'segment'])
-    cols_to_join = find_high_corr(threshold=0.1, drop_mode=False)
+    cols_to_join = find_high_corr(threshold=threshold, drop_mode=False)
     cols_to_join.append('key_col')
     cols_to_join = np.array(cols_to_join)
     features_to_join = features[cols_to_join]
@@ -35,7 +35,7 @@ def prepare_multiclass_target(y):
 
 
 def prepare_binary_target(full_y, true_val):
-    y = np.where(full_y == true_val, 1.0, 0.0)
+    y = np.where(full_y.isin(true_val), 1.0, 0.0)
     y = np.ravel(y)
     return y
 
