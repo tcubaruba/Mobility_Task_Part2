@@ -31,7 +31,6 @@ def find_high_corr(threshold=0.3, drop_mode=True):
     high_corr = mode_corr[abs(mode_corr) > threshold]
 
     high_corr_cols = list(high_corr.index)
-    print(high_corr_cols)
 
     if drop_mode:
         high_corr_cols.remove('mode')
