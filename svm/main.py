@@ -1,12 +1,14 @@
 import sys
+import time
 
 import pandas as pd
 import numpy as np
+from sklearn.svm import LinearSVC
+
 import preprocess.preprocess
 from sklearn.model_selection import train_test_split
-
-import svm.svm_helper as svm
-
+from sklearn.metrics import f1_score
+from sklearn.preprocessing import normalize
 
 pd.set_option('display.max_columns', None)
 np.set_printoptions(threshold=sys.maxsize)
@@ -29,12 +31,36 @@ data = pd.merge(data, features_to_join, on='key_col')
 
 data = data.set_index('key_col')
 data = data.dropna(axis=0)
-target = data['mode']
+target = data[['mode']].to_numpy()
 data = data.drop(columns=['mode', 'time_ms'])
 
-print(data.head())
+colnames = data.columns
+index = data.index
+data = pd.DataFrame(normalize(data), columns=colnames, index=index)
 
+# for binary classification
+target = np.where(target == 'WALK', 1, 0)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=0)
-o_svm = svm.Svm()
-o_svm.fit(X_train, y_train)
+print(f"shape X total: {data.shape}")
+print(f"shape y total: {target.shape}")
+
+x_train, x_test, y_train, y_test = train_test_split(data, target, test_size=0.99, random_state=42)
+print(f"shape X train: {x_train.shape}")
+print(f"shape y train: {y_train.shape}")
+print(f"shape X test: {x_test.shape}")
+print(f"shape y test: {y_test.shape}")
+
+start = time.time()
+
+# train the model
+svc = LinearSVC()
+svc.fit(x_train, np.ravel(y_train))
+
+duration_train = time.time() - start
+print(f"trained in {duration_train} sec")
+duration_classification = (time.time() - start) - duration_train
+
+# predict
+y_pred = svc.predict(x_test)
+print(f"classified in {duration_classification} sec")
+print(f"f1 score: {f1_score(y_test, y_pred, labels=None, pos_label=1, average='binary', sample_weight=None)}")
