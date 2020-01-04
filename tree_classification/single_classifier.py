@@ -13,5 +13,5 @@ def single_classifier_results(training_data: np.array, labels: np.array) -> dict
     dtc = DecisionTreeClassifier(criterion='gini')
 
     # measure accuracy of training
-    scores, _ = get_scores_for_cross_val(dtc, x, y)
+    scores = get_scores_for_cross_val(dtc, x, y)
     return scores

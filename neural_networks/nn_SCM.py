@@ -8,7 +8,6 @@ from utils.models_utils import get_scores_for_cross_val
 from preprocess.preprocess import normalize_X
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
-from sklearn.model_selection import cross_validate
 
 pd.set_option('display.max_columns', None)
 np.set_printoptions(threshold=sys.maxsize)
@@ -24,7 +23,7 @@ X_test = normalize_X(X_test)
 model = MLPClassifier(hidden_layer_sizes=(100, 100, 50), activation='relu', solver='adam', verbose=False, max_iter=1000,
                       alpha=0.0001, batch_size=100, warm_start=True)
 
-scores, model = get_scores_for_cross_val(model, X_train, y_train)
+scores = get_scores_for_cross_val(model, X_train, y_train)
 for score in scores:
     print(score, ": ", scores[score])
 

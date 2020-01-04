@@ -38,6 +38,6 @@ def ensemble_classifier_resuts(training_data: np.array, labels: np.array) -> tup
 
     # x_train, x_test, y_train, y_test = train_test_split(non_walk_data_to_learn, non_walk_labels, test_size=0.3, random_state=1)
 
-    non_walk_predictions, _ = get_scores_for_cross_val(dtc, non_walk_data_to_learn, non_walk_labels)
+    non_walk_predictions = get_scores_for_cross_val(dtc, non_walk_data_to_learn, non_walk_labels)
 
     return binary_classifying_results, non_walk_predictions
