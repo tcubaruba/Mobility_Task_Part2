@@ -37,10 +37,7 @@ def ensemble_classifier_resuts(training_data: np.array, labels: np.array) -> tup
     # train on the non walk classified data
     non_walk_labels = prepare_binary_target(non_walk_labels, ['TRAM', 'TRAIN', 'METRO', 'CAR', 'BUS' 'BICYCLE'])
 
-    x_train, x_test, y_train, y_test = train_test_split(non_walk_data_to_learn, non_walk_labels, test_size=0.3, random_state=1)
-
-    dtc.fit(x_train, y_train)
-    y_predictions = dtc.predict(x_test)
+    # x_train, x_test, y_train, y_test = train_test_split(non_walk_data_to_learn, non_walk_labels, test_size=0.3, random_state=1)
 
     non_walk_predictions = get_scores_for_cross_val(dtc, non_walk_data_to_learn, non_walk_labels)
 
