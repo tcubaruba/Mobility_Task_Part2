@@ -3,64 +3,53 @@ import time
 
 import pandas as pd
 import numpy as np
-from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
 
-import preprocess.preprocess
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import f1_score
-from sklearn.preprocessing import normalize
+from sklearn.metrics import confusion_matrix
 
-pd.set_option('display.max_columns', None)
-np.set_printoptions(threshold=sys.maxsize)
+from utils.models_utils import load_features_data
+from utils.models_utils import prepare_multiclass_target
+from utils.models_utils import get_scores_for_cross_val
+from preprocess.preprocess import normalize_X
 
-input_data = pd.read_csv('../final/all_segments.csv')
-features = pd.read_csv('../final/all_features.csv')
+# data preparation
+X, y = load_features_data(correlation_threshold=0.2)
+y = prepare_multiclass_target(y)
 
-data = input_data.copy()
-data['key_col'] = data['trip'].astype(str).str.cat(data['segment'].astype(str), sep='_')
-data = data.drop(columns=['trip', 'segment'])
+# split data
+x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.7, random_state=34, shuffle=True)
+# print(f"shape x_train: {x_train.shape}")
+# print(f"shape x_test: {x_test.shape}")
 
-features['key_col'] = features['trip'].astype(str).str.cat(features['segment'].astype(str), sep='_')
-features = features.drop(columns=['trip', 'segment'])
-cols_to_join = preprocess.preprocess.find_high_corr(threshold=0.3)
-cols_to_join.append('key_col')
-cols_to_join = np.array(cols_to_join)
-features_to_join = features[cols_to_join]
+# multiple svc model definition
+models_dict = {
+    'rbf': SVC(kernel="rbf", gamma="auto"),  # Radial-basis function kernel (aka squared-exponential kernel).
+    'sigmoid': SVC(kernel="sigmoid", gamma="auto", decision_function_shape='ovo'),  # couldn't be parameterized to get reasonable results
+    'linear': SVC(kernel="linear", gamma="auto"),
+    # 'poly': SVC(kernel="poly", degree=3, gamma="auto"),  # infeasible to compute with my notebook
+}
 
-data = pd.merge(data, features_to_join, on='key_col')
+for svc_name in models_dict:
+    print()
+    print("*" * 15)
+    print(f"MODEL: svc-{svc_name}")
 
-data = data.set_index('key_col')
-data = data.dropna(axis=0)
-target = data[['mode']].to_numpy()
-data = data.drop(columns=['mode', 'time_ms'])
+    start = time.time()
 
-colnames = data.columns
-index = data.index
-data = pd.DataFrame(normalize(data), columns=colnames, index=index)
+    # train model
+    svc_model = models_dict[svc_name]
+    svc_model.fit(x_train, y_train)
+    print(f"trained in {time.time() - start} sec")
 
-# for binary classification
-target = np.where(target == 'WALK', 1, 0)
+    # predict test_data
+    y_pred = svc_model.predict(x_test)
+    print(f"trained in {time.time() - start} sec")
 
-print(f"shape X total: {data.shape}")
-print(f"shape y total: {target.shape}")
-
-x_train, x_test, y_train, y_test = train_test_split(data, target, test_size=0.99, random_state=42)
-print(f"shape X train: {x_train.shape}")
-print(f"shape y train: {y_train.shape}")
-print(f"shape X test: {x_test.shape}")
-print(f"shape y test: {y_test.shape}")
-
-start = time.time()
-
-# train the model
-svc = LinearSVC()
-svc.fit(x_train, np.ravel(y_train))
-
-duration_train = time.time() - start
-print(f"trained in {duration_train} sec")
-duration_classification = (time.time() - start) - duration_train
-
-# predict
-y_pred = svc.predict(x_test)
-print(f"classified in {duration_classification} sec")
-print(f"f1 score: {f1_score(y_test, y_pred, labels=None, pos_label=1, average='binary', sample_weight=None)}")
+    # confusion matrix
+    labels = np.unique(y_pred)
+    c_matrix = confusion_matrix(y_test, y_pred, labels=labels)
+    print(c_matrix)
+    # scores = get_scores_for_cross_val(svc_model, X, y)
+    # for score in scores:
+    #     print(score, ": ", scores[score])
