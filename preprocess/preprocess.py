@@ -24,6 +24,7 @@ def find_high_corr(threshold=0.3, drop_mode=True):
 
     corr = features.corr()
     mode_corr = corr['mode']
+    # print(mode_corr)
 
     high_corr = mode_corr[abs(mode_corr) > threshold]
 
@@ -32,12 +33,14 @@ def find_high_corr(threshold=0.3, drop_mode=True):
     if drop_mode:
         high_corr_cols.remove('mode')
 
+    # print(high_corr_cols)
     return high_corr_cols
 
 
 def target_to_numerical(data, column):
     target = data[column]
     target = target.astype('category')
+    print(dict(enumerate(target.cat.categories)))
     target = target.cat.codes
     target = target.values
     return target
