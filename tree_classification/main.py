@@ -21,4 +21,4 @@ if __name__ == '__main__':
     print("[Ensemble Walk Classification: Multi-Class]")
     binary_classifying_results, non_walk_predictions = ec.ensemble_classifier_resuts(X, y)
     print("* Mean Training Accuracy of Walk-Data: %0.2f" % binary_classifying_results['test_accuracy'].mean())
-    print("Mean Training Accuracy of Non-Walk Data: %0.2f" % non_walk_predictions['test_accuracy'].mean())
+    print("* Mean Training Accuracy of Non-Walk Data: %0.2f" % non_walk_predictions['test_accuracy'].mean())
