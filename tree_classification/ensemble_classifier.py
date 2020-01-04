@@ -12,7 +12,7 @@ def ensemble_classifier_resuts(training_data: np.array, labels: np.array) -> tup
     y = prepare_binary_target(y, ['WALK'])
 
     dtc = DecisionTreeClassifier(criterion='gini')
-    binary_classifying_results, _ = get_scores_for_cross_val(dtc, x, y)
+    binary_classifying_results = get_scores_for_cross_val(dtc, x, y)
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=1)
 

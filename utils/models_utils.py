@@ -53,5 +53,3 @@ def get_scores_for_cross_val(model, X, y):
 def count_class_members():
     features = pd.read_csv('../final/all_features.csv')
     print(features['mode'].value_counts())
-
-
