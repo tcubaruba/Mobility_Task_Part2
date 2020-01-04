@@ -8,12 +8,11 @@ from sklearn.model_selection import train_test_split
 
 def ensemble_classifier_resuts(training_data: np.array, labels: np.array) -> tuple:
     x = training_data
-    print("Size of original training data: ", len(training_data))
     y = pd.DataFrame.copy(labels)
     y = prepare_binary_target(y, ['WALK'])
 
     dtc = DecisionTreeClassifier(criterion='gini')
-    binary_classifying_results = get_scores_for_cross_val(dtc, x, y)
+    binary_classifying_results, _ = get_scores_for_cross_val(dtc, x, y)
 
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=1)
 
@@ -39,6 +38,6 @@ def ensemble_classifier_resuts(training_data: np.array, labels: np.array) -> tup
 
     # x_train, x_test, y_train, y_test = train_test_split(non_walk_data_to_learn, non_walk_labels, test_size=0.3, random_state=1)
 
-    non_walk_predictions = get_scores_for_cross_val(dtc, non_walk_data_to_learn, non_walk_labels)
+    non_walk_predictions, _ = get_scores_for_cross_val(dtc, non_walk_data_to_learn, non_walk_labels)
 
     return binary_classifying_results, non_walk_predictions

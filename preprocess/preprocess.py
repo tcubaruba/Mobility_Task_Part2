@@ -40,7 +40,8 @@ def find_high_corr(threshold=0.3, drop_mode=True):
 def target_to_numerical(data, column):
     target = data[column]
     target = target.astype('category')
-    print(dict(enumerate(target.cat.categories)))
+    # please no print() side effects in utility functions...cause of cancer!
+    # print(dict(enumerate(target.cat.categories)))
     target = target.cat.codes
     target = target.values
     return target
