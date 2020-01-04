@@ -131,11 +131,11 @@ for mode in rail:
     #                                                                             y_train_false, y_test_false, [mode])
     _, _, _, _, _, _, _, _, _, \
     X_test_false, _, y_test_false = make_binary_classification(X_train_orig, X_test_false,
-                                                                       y_train_orig, y_test_false, rail)
+                                                                       y_train_orig, y_test_false, [mode])
     print(y_test_false['mode'].value_counts())
     print(y_train_orig['mode'].value_counts())
 
-_, _,_, y_test_false = X_train_road, X_test_road, y_train_road, y_test_road
+_, X_test_false,_, y_test_false = X_train_road, X_test_road, y_train_road, y_test_road
 print(y_test_false['mode'].value_counts())
 print(y_train_orig['mode'].value_counts())
 for mode in road:
