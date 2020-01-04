@@ -25,6 +25,8 @@ def load_features_data(correlation_threshold=0.1):
 
     y = y.set_index('key_col')
     X = X.set_index('key_col')
+    X = pd.DataFrame(X)
+    y = pd.DataFrame(y)
     return X, y
 
 
@@ -45,5 +47,11 @@ def get_scores_for_cross_val(model, X, y):
                'f1_weighted']
     scores = cross_validate(model, X, y, scoring=scoring,
                             cv=5, return_train_score=True, n_jobs=-1)
-    return scores
+    return scores, model
+
+
+def count_class_members():
+    features = pd.read_csv('../final/all_features.csv')
+    print(features['mode'].value_counts())
+
 
