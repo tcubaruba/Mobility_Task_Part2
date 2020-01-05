@@ -20,10 +20,12 @@ mode_list = ["WALK", "BICYCLE", "CAR", "BUS", "TRAM", "METRO", "TRAIN"]
 
 
 def ensemble_classifier(X: pd.DataFrame, y: np.ndarray, kernel_name="linear"):
-    print(f"*** SVC-kernal: {kernel_name} ***")
+    print(f"*** SVC-kernel: {kernel_name} ***")
 
     # split data
     x_train, x_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=34, shuffle=True)
+    print(f"\tshape x_train: {x_train.shape}")
+    print(f"\tshape y_train: {y_train.shape}")
 
     # get new y where 'Walk' is labeled as 1
     for mode in mode_list:
@@ -37,15 +39,16 @@ def ensemble_classifier(X: pd.DataFrame, y: np.ndarray, kernel_name="linear"):
         # retrieve new model object from models_dict
         svc_model = models_dict[kernel_name]
 
-        print(f"shape x_train: {y_train_binary.shape}")
-        print(f"shape x_test: {y_test_binary.shape}")
+        print(f"\tshape y_test: {y_test_binary.shape}")
+        print(f"\tshape x_test: {x_test.shape}")
 
         # train model
         svc_model.fit(x_train, y_train_binary)
 
         # compute confusion matrix:
         y_pred = svc_model.predict(x_test)
-        c_matrix = confusion_matrix(y_test, y_pred)
+        c_matrix = confusion_matrix(y_test_binary, y_pred)
+        print("confusion matrix:")
         print(c_matrix)
 
         # remove as target mode classified objects from TEST data only
