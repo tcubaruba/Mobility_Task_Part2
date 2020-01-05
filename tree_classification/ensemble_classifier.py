@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
-from utils.models_utils import prepare_binary_target
-from utils.models_utils import get_scores_for_cross_val
+from utils.models_utils import prepare_binary_target, get_final_metrics, prepare_multiclass_target
 from sklearn.model_selection import train_test_split
+import time
 
 
 def ensemble_classifier_resuts(training_data: np.array, labels: np.array) -> tuple:
@@ -11,13 +11,17 @@ def ensemble_classifier_resuts(training_data: np.array, labels: np.array) -> tup
     y = pd.DataFrame.copy(labels)
     y = prepare_binary_target(y, ['WALK'])
 
-    dtc = DecisionTreeClassifier(criterion='gini')
-    binary_classifying_results = get_scores_for_cross_val(dtc, x, y)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=1)
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.3, random_state=1)
+    dtc = DecisionTreeClassifier(criterion='entropy')
 
-    dtc = DecisionTreeClassifier(criterion='gini')
+    start = time.time()
     dtc.fit(x_train, y_train)
+    print(f"trained in {time.time() - start} sec")
+
+    y_pred = dtc.predict(x_test)
+
+    binary_classifying_results = get_final_metrics(y_test, y_pred)
 
     walk_data_idx = list()
     idx = -1
@@ -35,10 +39,16 @@ def ensemble_classifier_resuts(training_data: np.array, labels: np.array) -> tup
 
     # train on the non walk classified data
     # labels := {'TRAM', 'TRAIN', 'METRO', 'CAR', 'BUS' 'BICYCLE'}
-    non_walk_labels = prepare_binary_target(non_walk_labels, ['TRAM', 'TRAIN', 'METRO'])
+    non_walk_labels = prepare_multiclass_target(non_walk_labels)
 
-    # x_train, x_test, y_train, y_test = train_test_split(non_walk_data_to_learn, non_walk_labels, test_size=0.3, random_state=1)
+    x_train, x_test, y_train, y_test = train_test_split(non_walk_data_to_learn, non_walk_labels, test_size=0.2, random_state=1)
 
-    non_walk_predictions = get_scores_for_cross_val(dtc, non_walk_data_to_learn, non_walk_labels)
+    start = time.time()
+    dtc.fit(x_train, y_train)
+    print(f"trained in {time.time() - start} sec")
+
+    y_pred = dtc.predict(x_test)
+
+    non_walk_predictions = get_final_metrics(y_test, y_pred)
 
     return binary_classifying_results, non_walk_predictions
