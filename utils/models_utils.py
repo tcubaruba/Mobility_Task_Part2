@@ -97,4 +97,3 @@ def get_final_metrics(y_true, y_pred):
         "Confusion matrix": confusion_matrix(y_true, y_pred)
     }
     return scoring
-

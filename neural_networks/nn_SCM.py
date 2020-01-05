@@ -33,7 +33,7 @@ y_pred = model.predict(X_test)
 scores = get_scores_for_cross_val(model, X, y)
 print('-'*15, 'CROSS VALIDATION SCORES', '-'*15)
 for score in scores:
-    print(score, ": ", scores[score])
+    print(score, ": ", scores[score], " Average:", np.mean(scores[score]))
 
 scores = get_final_metrics(y_test, y_pred)
 print('-'*15, 'FINAL SCORES SINGLE CLASSIFIER MODEL NEURAL NETWORK', '-'*15)
