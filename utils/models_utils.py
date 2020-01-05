@@ -13,6 +13,11 @@ from sklearn.metrics import confusion_matrix
 
 
 def load_features_data(correlation_threshold=0.1):
+    """
+    Loads data with all features per trip
+    :param correlation_threshold: select only features with minimum absolute correlation to mode
+    :return: X, y
+    """
     features = pd.read_csv('../final/all_features.csv')
 
     features['key_col'] = features['trip'].astype(str).str.cat(features['segment'].astype(str), sep='_')
@@ -36,18 +41,37 @@ def load_features_data(correlation_threshold=0.1):
 
 
 def prepare_multiclass_target(y):
+    """
+    Converts multiclass target vector from string to numerical
+    :param y: target vector with string values
+    :return: target vector with numerical values
+    """
     y = target_to_numerical(y, 'mode')
     y = np.ravel(y)
     return y
 
 
-def prepare_binary_target(full_y, true_val):
-    y = np.where(full_y.isin(true_val), 1.0, 0.0)
+def prepare_binary_target(full_y, true_classes):
+    """
+    Converts multi-class target vector to binary vector
+    :param full_y: target array with multiple classes
+    :param true_classes: array of classes which should be converted to True
+    :return: binary target vector with Ones for true classes and Zeros for other classes
+    """
+    y = np.where(full_y.isin(true_classes), 1.0, 0.0)
     y = np.ravel(y)
     return y
 
 
 def get_scores_for_cross_val(model, X, y):
+    """
+    Get cross validation scores for the model: 'accuracy', 'precision_macro', 'precision_weighted', 'recall_macro',
+    'recall_weighted', 'f1_macro', 'f1_weighted'
+    :param model: model to score
+    :param X: Dataframe X
+    :param y: target vector
+    :return: dictionary with scores listed above
+    """
     scoring = ['accuracy', 'precision_macro', 'precision_weighted', 'recall_macro', 'recall_weighted', 'f1_macro',
                'f1_weighted']
     scores = cross_validate(model, X, y, scoring=scoring,
@@ -55,6 +79,13 @@ def get_scores_for_cross_val(model, X, y):
     return scores
 
 def get_final_metrics(y_true, y_pred):
+    """
+    Get scores for test target vector and predictions vector: 'accuracy', 'precision_macro', 'precision_weighted',
+    'recall_macro', 'recall_weighted', 'f1_macro', 'f1_weighted', 'confusion matrix'
+    :param y_true: test target vector
+    :param y_pred: predictions vector
+    :return: dictionary with scores listed above
+    """
     scoring = {
         "Accuracy": accuracy_score(y_true, y_pred),
         "Precision macro": precision_score(y_true, y_pred, average='macro'),
@@ -67,8 +98,3 @@ def get_final_metrics(y_true, y_pred):
     }
     return scoring
 
-
-
-def count_class_members():
-    features = pd.read_csv('../final/all_features.csv')
-    print(features['mode'].value_counts())
