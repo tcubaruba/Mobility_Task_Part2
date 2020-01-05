@@ -5,7 +5,13 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 
 
-def find_high_corr(threshold=0.3, drop_mode=True):
+def find_high_corr(threshold=0.1, drop_mode=True):
+    """
+    Finds features with minimum absolute correlation to mode
+    :param threshold: minimum absolute correlation
+    :param drop_mode: if True, drops mode column from the result
+    :return: names of columns with high correlation
+    """
 
     features = pd.read_csv('../final/all_features.csv')
     # delete cols with nan values
@@ -21,33 +27,36 @@ def find_high_corr(threshold=0.3, drop_mode=True):
     features['mode'] = features['mode'].astype('category')
     features['mode'] = features['mode'].cat.codes
     features = features.drop(columns='segment')
-
     corr = features.corr()
     mode_corr = corr['mode']
-    # print(mode_corr)
-
     high_corr = mode_corr[abs(mode_corr) > threshold]
-
     high_corr_cols = list(high_corr.index)
 
     if drop_mode:
         high_corr_cols.remove('mode')
-
-    # print(high_corr_cols)
     return high_corr_cols
 
 
 def target_to_numerical(data, column):
+    """
+    Converts column in data frame from string to numerical value
+    :param data: data frame
+    :param column: name of column to convert
+    :return: numerical array
+    """
     target = data[column]
     target = target.astype('category')
-    # please no print() side effects in utility functions...cause of cancer!
-    # print(dict(enumerate(target.cat.categories)))
     target = target.cat.codes
     target = target.values
     return target
 
 
 def normalize_X(orig_data):
+    """
+    Normalizes data frame using sklearn library
+    :param orig_data: Data Frame to normalize
+    :return: normalized Data Frame
+    """
     data = orig_data.copy()
     colnames = data.columns
     index = data.index
