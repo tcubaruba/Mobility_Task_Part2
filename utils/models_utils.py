@@ -78,6 +78,7 @@ def get_scores_for_cross_val(model, X, y):
                             cv=5, return_train_score=True, n_jobs=-1)
     return scores
 
+
 def get_final_metrics(y_true, y_pred):
     """
     Get scores for test target vector and predictions vector: 'accuracy', 'precision_macro', 'precision_weighted',
