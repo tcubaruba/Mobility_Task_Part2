@@ -88,36 +88,37 @@ def make_multiclass_classification(X_train, X_test, y_train):
     return y_pred
 
 
-X, y_orig = load_features_data(correlation_threshold=0.05)
-X_train_orig, X_test_orig, y_train_orig, y_test_orig = train_test_split(X, y_orig, test_size=0.2, random_state=42,
-                                                                        shuffle=True)
+def nn_EWCM_simple():
+    X, y_orig = load_features_data(correlation_threshold=0.05)
+    X_train_orig, X_test_orig, y_train_orig, y_test_orig = train_test_split(X, y_orig, test_size=0.2, random_state=42,
+                                                                            shuffle=True)
 
-start = time.time()
-print('-'*15, 'SEPARATIONG WALK AND NON-WALK', '-'*15)
-X_train_true, X_train_false, y_train_true, y_train_false, X_test_true, \
-           X_test_false, y_test_true, y_test_false = make_binary_classification(X_train_orig, X_test_orig, y_train_orig,
-                                                                                y_test_orig, ['WALK'])
+    start = time.time()
+    print('-'*15, 'SEPARATIONG WALK AND NON-WALK', '-'*15)
+    X_train_true, X_train_false, y_train_true, y_train_false, X_test_true, \
+               X_test_false, y_test_true, y_test_false = make_binary_classification(X_train_orig, X_test_orig, y_train_orig,
+                                                                                    y_test_orig, ['WALK'])
 
-# result test set, add all trips which were classifies as WALK
-res = X_test_true
-res['mode'] = 'WALK'
+    # result test set, add all trips which were classifies as WALK
+    res = X_test_true
+    res['mode'] = 'WALK'
 
-print('-'*15, 'SEPARATING ALL OTHER CLASSES', '-'*15)
-X_test_false = X_test_false.sort_index()
-to_append = X_test_false
+    print('-'*15, 'SEPARATING ALL OTHER CLASSES', '-'*15)
+    X_test_false = X_test_false.sort_index()
+    to_append = X_test_false
 
-y_pred = make_multiclass_classification(X_train_false, X_test_false, y_train_false)
-print(f"trained in {time.time() - start} sec")
+    y_pred = make_multiclass_classification(X_train_false, X_test_false, y_train_false)
+    print(f"trained in {time.time() - start} sec")
 
-to_append['mode'] = y_pred
+    to_append['mode'] = y_pred
 
-# get precitions from both parts together
-res = res.append(to_append)
-res = res.sort_index()
-y_test_orig = y_test_orig.sort_index()
-y_pred = res['mode']
-scores = get_final_metrics(y_test_orig, y_pred)
-print('-' * 15, 'FINAL SCORES ENSEMBLE CLASSIFIER MODEL NEURAL NETWORK', '-' * 15)
-for score in scores:
-    print(score, ":\n", scores[score])
+    # get precitions from both parts together
+    res = res.append(to_append)
+    res = res.sort_index()
+    y_test_orig = y_test_orig.sort_index()
+    y_pred = res['mode']
+    scores = get_final_metrics(y_test_orig, y_pred)
+    print('-' * 15, 'FINAL SCORES ENSEMBLE CLASSIFIER MODEL NEURAL NETWORK', '-' * 15)
+    for score in scores:
+        print(score, ":\n", scores[score])
 
