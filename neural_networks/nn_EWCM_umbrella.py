@@ -121,7 +121,7 @@ def nn_EWCM_umbrella():
     print(f"trained in {time.time() - start} sec")
 
     scores = get_final_metrics(y_test_orig, y_pred)
-    print('-'*15, 'FINAL SCORES SINGLE CLASSIFIER MODEL NEURAL NETWORK', '-'*15)
+    print('-'*15, 'FINAL SCORES ENSEMBLE CLASSIFIER NEURAL NETWORK (UMBRELLA)', '-'*15)
     for score in scores:
         print(score, ":\n", scores[score])
 

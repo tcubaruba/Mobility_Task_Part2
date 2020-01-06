@@ -118,7 +118,7 @@ def nn_EWCM_simple():
     y_test_orig = y_test_orig.sort_index()
     y_pred = res['mode']
     scores = get_final_metrics(y_test_orig, y_pred)
-    print('-' * 15, 'FINAL SCORES ENSEMBLE CLASSIFIER MODEL NEURAL NETWORK', '-' * 15)
+    print('-' * 15, 'FINAL SCORES ENSEMBLE CLASSIFIER MODEL NEURAL NETWORK (SIMPLE)', '-' * 15)
     for score in scores:
         print(score, ":\n", scores[score])
 
